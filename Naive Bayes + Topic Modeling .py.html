@@ -1,37 +1,24 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[274]:
-
-
 import pandas as pd 
 import os
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
 
+#read csv file
 data = pd.read_csv('/Users/natasha246/Documents/questions_list_users_sorted.csv', delimiter = ',')
 df = pd.DataFrame(data)
 
-
-# In[275]:
-
-
+#appends questions and labels into lists
 ind = 0
 questions = []
-y = []
+label = []
 while ind!=500: 
     questions.append(data.iloc[ind, 4])
-    y.append(data.iloc[ind,9])
+    label.append(data.iloc[ind,9])
     ind+=1    
-y = np.array(y)
+label = np.array(label)
 vectorizer = CountVectorizer()
 X = vectorizer.fit_transform(questions)
 
-
-# In[276]:
-
-
-import numpy as np
 import csv
 from gensim import corpora, models
 from gensim.corpora import Dictionary
@@ -43,9 +30,7 @@ from spacy.lang.en import English
 parser = English()
 
 
-# In[277]:
-
-
+#cleans text of unnecessary words for lda 
 def tokenize(text):
     lda_tokens = []
     tokens = parser(text)
@@ -57,19 +42,7 @@ def tokenize(text):
     return lda_tokens
 
 
-# In[278]:
-
-
-y = []
-ind = 0 
-while ind!= 500:
-    y.append(data.iloc[ind,9])
-    ind+=1
-
-
-# In[279]:
-
-
+#create list of lists from users's tweets
 lol_users = defaultdict(list)
 
 for line in csv.DictReader(open('/Users/natasha246/Documents/questions_list_users_sorted.csv')):
@@ -82,8 +55,7 @@ numtop = 10
 model = ldamodel.LdaModel(corpus, id2word=dictionary, num_topics=numtop)
 
 
-lol_ = []
-tm = []
+lol_topics = []
 users = []
 for k, v in lol_users.items():
     bow = dictionary.doc2bow(v)
@@ -94,13 +66,10 @@ for k, v in lol_users.items():
     for tuple in doc_topics:
         index,prob = tuple
         arr[index] = prob
-    lol_.append(arr)    
+    lol_topics.append(arr)    
 
-
-# In[280]:
-
-
-tm = []
+#makes the topic modeling features from user level to tweet level
+bigmatrix_lol_topics= []
 counter = 0
 ind = 0
 for user in users:
@@ -110,20 +79,15 @@ for user in users:
             count+=1
     i = 0
     while i!=count:
-        tm.append(lol_[ind])
+        bigmatrix_lol_topics.append(lol_[ind])
         i+=1
-    ind +=1   
+    ind +=1  
+    
+#matrices side-by-side
+matrix = np.hstack((X.toarray(), bigmatrix_lol_topics))
 
 
-# In[281]:
-
-
-matrix = np.hstack((X.toarray(), tm))
-
-
-# In[284]:
-
-
+#Naive Bayes Classifier
 from sklearn.naive_bayes import GaussianNB
 model = GaussianNB()
 
@@ -136,14 +100,7 @@ kf = KFold(n_splits = 10, shuffle = True)
 for train_index, test_index in kf.split(X):
     print("TRAIN:", train_index, "TEST:", test_index)
     X_train, X_test = matrix[train_index], matrix[test_index]
-    y_train, y_test = y[train_index], y[test_index]
+    y_train, y_test = label[train_index], label[test_index]
     model.fit(X_train,y_train)
     predict = model.predict(X_test)
     print("Accuracy:", metrics.accuracy_score(y_test, predict)) 
-
-
-# In[ ]:
-
-
-
-
