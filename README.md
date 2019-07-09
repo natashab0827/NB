@@ -1,5 +1,5 @@
 # Topic Modeling + Naive Bayes Classifer
-This code uses sklearn for a naive bayes classifier and uses gensim's LDA to implement topic modeling. 
+This code uses sklearn to build a naive bayes classifier and gensim's LDA to implement topic modeling. 
 
 #Requirements
 The following packages are required: 
